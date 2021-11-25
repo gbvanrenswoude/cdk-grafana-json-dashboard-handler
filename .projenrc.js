@@ -6,8 +6,16 @@ const project = new AwsCdkConstructLibrary({
   defaultReleaseBranch: 'main',
   name: 'cdk-grafana-json-dashboard-handler',
   repositoryUrl: 'https://github.com/gbvanrenswoude/cdk-grafana-json-dashboard-handler.git',
-
-  // cdkDependencies: undefined,      /* Which AWS CDK modules (those that start with "@aws-cdk/") does this library require when consumed? */
+  gitignore: ['cdk.out'],
+  python: {
+    distName: 'cdk-grafana-json-dashboard-handler',
+    module: 'cdk-grafana-json-dashboard-handler',
+  },
+  cdkDependencies: [
+    '@aws-cdk/core',
+    '@aws-cdk/aws-iam',
+    '@aws-cdk/aws-lambda',
+  ],  
   // cdkTestDependencies: undefined,  /* AWS CDK modules required for testing. */
   // deps: [],                        /* Runtime dependencies of this module. */
   // description: undefined,          /* The description is just a string that helps people understand the purpose of the package. */
