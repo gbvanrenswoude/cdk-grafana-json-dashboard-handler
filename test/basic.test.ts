@@ -6,11 +6,29 @@ test('create app', () => {
   const app = new cdk.App();
   const stack = new cdk.Stack(app);
   new GrafanaHandler(stack, 'TestStack', {
-    dashboard_app_name: 'test',
-    grafana_pw: 'test',
-    grafana_url: 'https://grafana-setup.domain.org',
-    path_to_file: '../src/test/test-dashboard.json'
+    dashboardAppName: 'test',
+    grafanaPw: 'test',
+    grafanaUrl: 'https://grafana-setup.domain.org',
+    pathToFile: '../src/test/test-dashboard.json'
   });
   expect(stack).toHaveResource('AWS::Lambda::Function');
   expect(stack).toHaveResource('AWS::CloudFormation::CustomResource');
+// TODO implement check for no subnetting
 });
+
+// TODO
+// test('create subnetted app', () => {
+//   const app = new cdk.App();
+//   const stack = new cdk.Stack(app);
+//   new GrafanaHandler(stack, 'TestStack', {
+//     dashboardAppName: 'test',
+//     grafanaPw: 'test',
+//     grafanaUrl: 'https://grafana-setup.domain.org',
+//     pathToFile: '../src/test/test-dashboard.json',
+//     vpc: 'todo',
+//     vpcSubnets: [todo]
+//   });
+//   expect(stack).toHaveResource('AWS::Lambda::Function');
+//   expect(stack).toHaveResource('AWS::CloudFormation::CustomResource');
+//   expect(stack).toHaveResource('AWS::EC2::SecurityGroup')
+// });

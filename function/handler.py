@@ -2,7 +2,7 @@ import json
 import requests  # TODO use urllib3 in order to ditch the lambda layer providing requests
 
 
-# A valid dashboard JSON has an iid, id and title. We generate these based on input, so static JSON files are not a problem
+# A valid dashboard JSON has an uid, id and title. We generate these based on input, so static JSON files are not a problem
 # when doing multiple deployments. This way, names only conflict when statically named in CDK
 def render_payload_object(event, dashboard_file, dashboard_app_name):
     dashboard_object = json.loads(dashboard_file)
