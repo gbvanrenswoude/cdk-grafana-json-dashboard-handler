@@ -59,3 +59,8 @@ pog.grafanaHandlerFunction.addToRolePolicy(
   })
 );
 ```
+
+## TODO / Roadmap
+
+1. Add custom KMS key support for the dashboard files in s3.
+2. Add support for secretmanager and optional key

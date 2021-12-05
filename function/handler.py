@@ -1,4 +1,5 @@
 import json
+import boto3
 import requests  # TODO use urllib3 in order to ditch the lambda layer providing requests
 
 
@@ -22,12 +23,17 @@ def render_payload_object(event, dashboard_file, dashboard_app_name):
     }
 
 
+s3 = boto3.client('s3')
+
+
 def main(event, context):
     # Process all we need from the event['ResourceProperties'], which is
     # event['ResourceProperties']['grafana_pw']
-    # event['ResourceProperties']['path_to_file']
+    # event['ResourceProperties']['bucket_name']
+    # event['ResourceProperties']['object_key']
     # event['ResourceProperties']['dashboard_app_name']
     # event['ResourceProperties']['grafana_url']
+    # event['ResourceProperties']['kms_key']
     try:
         headers = {"Accept": "application/json", "Content-Type": "application/json",
                    "Authorization": "Bearer " + event['ResourceProperties']['grafana_pw']}
@@ -36,9 +42,12 @@ def main(event, context):
         print(f'Set target to: {grafana_url}')
 
         print(f'Loading in dashboard JSON file')
-        dashboard_json_path = event['ResourceProperties']['path_to_file']
-        with open(dashboard_json_path) as file:
-            dashboard_file = file.read()
+        bucket_name = event['ResourceProperties']['bucket_name']
+        key = event['ResourceProperties']['object_key']
+
+        response = s3.get_object(Bucket=bucket_name,
+                                 Key=key)
+        dashboard_file = response['Body'].read()
 
         dashboard_app_name = event['ResourceProperties']['dashboard_app_name']
     except Exception as e:

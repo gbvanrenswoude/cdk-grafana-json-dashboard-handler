@@ -3,17 +3,31 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as lambda from "@aws-cdk/aws-lambda";
 import * as logs from "@aws-cdk/aws-logs";
 import * as cdk from "@aws-cdk/core";
-import * as ec2 from "@aws-cdk/aws-ec2"
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as kms from "@aws-cdk/aws-kms";
 
 /**
  * Properties for a newly created Grafana Handler Construct.
- * A valid Grafana dashboard JSON has an uid, id and title key in the root of the object. 
+ * A valid Grafana dashboard JSON has an uid, id and title key in the root of the object.
  * We generate these based on input so static JSON files are not a problem when wanting to deploy more dynamic
  * but the end result is still deterministic. This is all derived from the dashboardAppName property
  */
 export interface GrafanaHandlerProps {
+  /**
+   * The password for your Grafana installation.
+   * TODO we should probably eat a Isecret and a key to resolve
+   */
   readonly grafanaPw: string;
-  readonly pathToFile: string;
+  /**
+   * The name of the S3 bucket containing your dashboard file.
+   * If your dashboard lives in source control, upload it for example using cdk s3 deployment construct.
+   */
+  readonly bucketName: string;
+  /**
+   * The object key (path to your file in the s3 bucket) to your dashboard file in s3.
+   * If your dashboard lives in source control, upload it for example using cdk s3 deployment construct.
+   */
+  readonly objectKey: string;
   /**
    * A unique identifier to identify this dashboard in Grafana.
    * This identifier is used to set or overwrite the title, id and uid keys in the dashboard json file
@@ -24,6 +38,8 @@ export interface GrafanaHandlerProps {
   readonly timeout?: cdk.Duration;
   readonly vpcSubnets?: ec2.SubnetSelection;
   readonly vpc?: ec2.IVpc;
+  readonly kmsKey?: kms.IKey;
+  // TODO add support for custom KMS encryption in the function code
 }
 
 export class GrafanaHandler extends cdk.Construct {
@@ -46,36 +62,63 @@ export class GrafanaHandler extends cdk.Construct {
           "arn:aws:lambda:eu-central-1:770693421928:layer:Klayers-python38-requests:24"
         ),
       ], // TODO move this to urllib3 in the function code, for now we use requests layer
-    }
+    };
 
     if (props.vpcSubnets) {
-      singletonFunctionProps = { ...singletonFunctionProps, ...{ vpcSubnets: props.vpcSubnets }}
+      singletonFunctionProps = {
+        ...singletonFunctionProps,
+        ...{ vpcSubnets: props.vpcSubnets },
+      };
     }
     if (props.vpc) {
-      singletonFunctionProps = { ...singletonFunctionProps, ...{ vpc: props.vpc }}
+      singletonFunctionProps = {
+        ...singletonFunctionProps,
+        ...{ vpc: props.vpc },
+      };
     }
 
     this.grafanaHandlerFunction = new lambda.SingletonFunction(
       this,
       "grafanaHandlerFunction",
-      singletonFunctionProps);
+      singletonFunctionProps
+    );
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["logs:*"],
         resources: ["*"],
       })
     );
+    this.grafanaHandlerFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:List*", "s3:Get*"],
+        resources: [props.bucketName],
+      })
+    );
+    if (props.kmsKey) {
+      this.grafanaHandlerFunction.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["kms:Get*", "kms:List*", "kms:Decrypt*", "kms:Describe*"],
+          resources: [props.kmsKey.keyArn],
+        })
+      );
+    }
 
     // multiple CRs must be able to call the shared singleton lambda function, so use
     // the cr properties to pass in the imageUri via event['ResourceProperties']['grafana_pw']
-    this.grafanaFunctionCRHandler = new cdk.CustomResource(this, "scanCR", {
-      serviceToken: this.grafanaHandlerFunction.functionArn,
-      properties: {
-        grafana_pw: props.grafanaPw,
-        path_to_file: props.pathToFile,
-        dashboard_app_name: props.dashboardAppName,
-        grafana_url: props.grafanaUrl,
-      },
-    });
+    this.grafanaFunctionCRHandler = new cdk.CustomResource(
+      this,
+      "grafanaHandlerCR",
+      {
+        serviceToken: this.grafanaHandlerFunction.functionArn,
+        properties: {
+          grafana_pw: props.grafanaPw,
+          bucket_name: props.bucketName,
+          object_key: props.objectKey,
+          dashboard_app_name: props.dashboardAppName,
+          grafana_url: props.grafanaUrl,
+          kms_key: props.kmsKey?.keyArn ? props.kmsKey.keyArn : null,
+        },
+      }
+    );
   }
 }

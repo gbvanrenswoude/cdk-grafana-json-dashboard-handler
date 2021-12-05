@@ -1,7 +1,9 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2'
-import * as ssm from '@aws-cdk/aws-ssm'
-import { GrafanaHandler } from './index';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as ssm from "@aws-cdk/aws-ssm";
+import * as s3 from "@aws-cdk/aws-s3";
+import * as s3assets from "@aws-cdk/aws-s3-deployment";
+import { GrafanaHandler } from "./index";
 
 const env = {
   region: process.env.CDK_DEFAULT_REGION,
@@ -13,7 +15,9 @@ const env = {
 function getRequiredEnvVariable(name: string) {
   const v = process.env[name];
   if (!v) {
-      throw new Error(`Mising required environment variable needed for testing: "${name}"`);
+    throw new Error(
+      `Mising required environment variable needed for testing: "${name}"`
+    );
   }
   return v;
 }
@@ -63,14 +67,32 @@ export class TestStack extends cdk.Stack {
       ).stringValue
     );
 
-    new GrafanaHandler(this, 'pog', {
-      dashboardAppName: 'cdkConstructTest',
-      grafanaPw: getRequiredEnvVariable('GRAFANA_PW'),
-      grafanaUrl: getRequiredEnvVariable('GRAFANA_URL'),
-      pathToFile: '../src/test/test-dashboard.json',
+    const bucket = new s3.Bucket(this, "pogg", {
+      autoDeleteObjects: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    new s3assets.BucketDeployment(this, "pogu", {
+      sources: [s3assets.Source.asset("test/dashboard")],
+      destinationBucket: bucket,
+      destinationKeyPrefix: "test/test",
+    });
+
+    new GrafanaHandler(this, "pog", {
+      dashboardAppName: "cdkConstructTest",
+      grafanaPw: getRequiredEnvVariable("GRAFANA_PW"),
+      grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
+      bucketName: bucket.bucketName,
+      objectKey: "test/test/dashboard/test-dashboard.json",
       vpc: testingVpc,
-      vpcSubnets: {subnets: [testingPrivateSubnetID1, testingPrivateSubnetID2, testingPrivateSubnetID3]}
+      vpcSubnets: {
+        subnets: [
+          testingPrivateSubnetID1,
+          testingPrivateSubnetID2,
+          testingPrivateSubnetID3,
+        ],
+      },
     });
   }
-};
-new TestStack(app, 'test-stack', { env });
+}
+new TestStack(app, "test-stack", { env });
