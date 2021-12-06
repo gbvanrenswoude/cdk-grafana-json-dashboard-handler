@@ -94,7 +94,7 @@ export class GrafanaHandler extends cdk.Construct {
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["s3:List*", "s3:Get*"],
-        resources: [props.bucketName],
+        resources: [`arn:aws:s3:::${props.bucketName}`],
       })
     );
     this.grafanaHandlerFunction.addToRolePolicy(
@@ -135,7 +135,7 @@ export class GrafanaHandler extends cdk.Construct {
           object_key: props.objectKey,
           dashboard_app_name: props.dashboardAppName,
           grafana_url: props.grafanaUrl,
-          kms_key: props.kmsKey?.keyArn ? props.kmsKey.keyArn : null,
+          kms_key: props.kmsKey?.keyArn ? props.kmsKey.keyArn : "None",
         },
       }
     );

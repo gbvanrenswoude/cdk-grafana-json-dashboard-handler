@@ -19,7 +19,7 @@ const bucket = new s3.Bucket(this, "pogg", {
   removalPolicy: cdk.RemovalPolicy.DESTROY,
 });
 
-new s3assets.BucketDeployment(this, "pogu", {
+const fdp = new s3assets.BucketDeployment(this, "pogu", {
   sources: [s3assets.Source.asset("test/dashboard")],
   destinationBucket: bucket,
   destinationKeyPrefix: "test/test",
@@ -33,19 +33,20 @@ const secret = sm.Secret.fromSecretPartialArn(
 ```
 
 ```ts
-new GrafanaHandler(this, "pog", {
+const dbr = new GrafanaHandler(this, "pog", {
   dashboardAppName: "cdkConstructTest",
   grafanaPwSecret: secret,
   grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
   bucketName: bucket.bucketName,
   objectKey: "test/test/dashboard/test-dashboard.json",
 });
+dbr.node.addDependency(fdp);
 ```
 
 If your handler needs to live inside your projects networking tier:
 
 ```ts
-new GrafanaHandler(this, "pog", {
+const dbr = new GrafanaHandler(this, "pog", {
   dashboardAppName: "cdkConstructTest",
   grafanaPwSecret: secret,
   grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
@@ -60,6 +61,7 @@ new GrafanaHandler(this, "pog", {
     ],
   },
 });
+dbr.node.addDependency(fdp);
 ```
 
 ## More permissions
@@ -67,14 +69,14 @@ new GrafanaHandler(this, "pog", {
 Whenever your handler needs more permissions use the `addToRolePolicy` on the properties exposed on the construct:
 
 ```ts
-const pog = new GrafanaHandler(this, "pog", {
+const dbr = new GrafanaHandler(this, "pog", {
   dashboardAppName: "cdkConstructTest",
   grafanaPw: process.env.pw, // pass in a string value. CDK supports resolving to string values from SSM and SecretsManager
   grafanaUrl: process.env.url,
   pathToFile: "../src/test/test-dashboard.json",
 });
 
-pog.grafanaHandlerFunction.addToRolePolicy(
+dbr.grafanaHandlerFunction.addToRolePolicy(
   new iam.PolicyStatement({
     actions: ["ec2:*"],
     resources: ["*"],
