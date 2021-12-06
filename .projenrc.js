@@ -16,19 +16,22 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-iam',
     '@aws-cdk/aws-lambda',
     '@aws-cdk/aws-ec2',
-    '@aws-cdk/aws-kms'
-  ],  
+    '@aws-cdk/aws-kms',
+    '@aws-cdk/aws-secretsmanager',
+    '@aws-cdk/aws-logs',
+    '@aws-cdk/aws-s3-deployment',
+    '@aws-cdk/aws-s3',
+    '@aws-cdk/aws-ssm',
+  ],
   peerDeps: [
-    '@aws-cdk/aws-kms'
+    '@aws-cdk/aws-kms',
   ],
   // cdkTestDependencies: undefined,  /* AWS CDK modules required for testing. */
   // deps: [],                        /* Runtime dependencies of this module. */
   // description: undefined,          /* The description is just a string that helps people understand the purpose of the package. */
   devDeps: [
-    '@aws-cdk/aws-s3-deployment',
-    '@aws-cdk/aws-s3',
-    '@aws-cdk/aws-ssm',
-  ],                     /* Build dependencies for this module. */
+    '@aws-cdk/aws-secretsmanager',
+  ], /* Build dependencies for this module. */
   // packageName: undefined,          /* The "name" in package.json. */
   // release: undefined,              /* Add release management to this project. */
 });
