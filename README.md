@@ -13,11 +13,32 @@ Write your Grafana Dashboard JSON file somewhere to disk.
 Use that Dashboard JSON in your stack as follows:
 
 ```ts
+// setup the dependencies for the construct, for example like this
+const bucket = new s3.Bucket(this, "pogg", {
+  autoDeleteObjects: true,
+  removalPolicy: cdk.RemovalPolicy.DESTROY,
+});
+
+new s3assets.BucketDeployment(this, "pogu", {
+  sources: [s3assets.Source.asset("test/dashboard")],
+  destinationBucket: bucket,
+  destinationKeyPrefix: "test/test",
+});
+
+const secret = sm.Secret.fromSecretPartialArn(
+  this,
+  "smLookup",
+  getRequiredEnvVariable("GRAFANA_SECRET_PARTIAL_ARN")
+);
+```
+
+```ts
 new GrafanaHandler(this, "pog", {
   dashboardAppName: "cdkConstructTest",
-  grafanaPw: process.env.pw, // pass in a string value. CDK supports resolving to string values from SSM and SecretsManager
-  grafanaUrl: process.env.url,
-  pathToFile: "../src/test/test-dashboard.json",
+  grafanaPwSecret: secret,
+  grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
+  bucketName: bucket.bucketName,
+  objectKey: "test/test/dashboard/test-dashboard.json",
 });
 ```
 
@@ -26,9 +47,10 @@ If your handler needs to live inside your projects networking tier:
 ```ts
 new GrafanaHandler(this, "pog", {
   dashboardAppName: "cdkConstructTest",
-  grafanaPw: process.env.pw, // pass in a string value. CDK supports resolving to string values from SSM and SecretsManager
-  grafanaUrl: process.env.url,
-  pathToFile: "../src/test/test-dashboard.json",
+  grafanaPwSecret: secret,
+  grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
+  bucketName: bucket.bucketName,
+  objectKey: "test/test/dashboard/test-dashboard.json",
   vpc: testingVpc,
   vpcSubnets: {
     subnets: [

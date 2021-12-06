@@ -1,11 +1,11 @@
-import * as path from 'path';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as iam from '@aws-cdk/aws-iam';
-import * as kms from '@aws-cdk/aws-kms';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
-import * as sm from '@aws-cdk/aws-secretsmanager';
-import * as cdk from '@aws-cdk/core';
+import * as path from "path";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as iam from "@aws-cdk/aws-iam";
+import * as kms from "@aws-cdk/aws-kms";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as logs from "@aws-cdk/aws-logs";
+import * as sm from "@aws-cdk/aws-secretsmanager";
+import * as cdk from "@aws-cdk/core";
 /**
  * Properties for a newly created Grafana Handler Construct.
  * A valid Grafana dashboard JSON has an uid, id and title key in the root of the object.
@@ -52,17 +52,17 @@ export class GrafanaHandler extends cdk.Construct {
     super(scope, id);
 
     let singletonFunctionProps: lambda.SingletonFunctionProps = {
-      uuid: 'staticuuidforgrafanahandlerfunctionjidjpvpdwd93r9',
+      uuid: "staticuuidforgrafanahandlerfunctionjidjpvpdwd93r9",
       runtime: lambda.Runtime.PYTHON_3_8,
-      code: lambda.Code.fromAsset(path.join(__dirname, '../function')),
-      handler: 'handler.main',
+      code: lambda.Code.fromAsset(path.join(__dirname, "../function")),
+      handler: "handler.main",
       logRetention: logs.RetentionDays.ONE_DAY,
       timeout: props.timeout ? props.timeout : cdk.Duration.seconds(60),
       layers: [
         lambda.LayerVersion.fromLayerVersionArn(
           this,
-          'externalRequestLayer',
-          'arn:aws:lambda:eu-central-1:770693421928:layer:Klayers-python38-requests:24',
+          "externalRequestLayer",
+          "arn:aws:lambda:eu-central-1:770693421928:layer:Klayers-python38-requests:24"
         ),
       ], // TODO move this to urllib3 in the function code, for now we use requests layer
     };
@@ -82,27 +82,33 @@ export class GrafanaHandler extends cdk.Construct {
 
     this.grafanaHandlerFunction = new lambda.SingletonFunction(
       this,
-      'grafanaHandlerFunction',
-      singletonFunctionProps,
+      "grafanaHandlerFunction",
+      singletonFunctionProps
     );
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['logs:*'],
-        resources: ['*'],
-      }),
+        actions: ["logs:*"],
+        resources: ["*"],
+      })
     );
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['s3:List*', 's3:Get*'],
+        actions: ["s3:List*", "s3:Get*"],
         resources: [props.bucketName],
-      }),
+      })
+    );
+    this.grafanaHandlerFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["secretsmanager:GetSecretValue"],
+        resources: [props.grafanaPwSecret.secretArn],
+      })
     );
     if (props.kmsKey) {
       this.grafanaHandlerFunction.addToRolePolicy(
         new iam.PolicyStatement({
-          actions: ['kms:Get*', 'kms:List*', 'kms:Decrypt*', 'kms:Describe*'],
+          actions: ["kms:Get*", "kms:List*", "kms:Decrypt*", "kms:Describe*"],
           resources: [props.kmsKey.keyArn],
-        }),
+        })
       );
     }
 
@@ -113,14 +119,14 @@ export class GrafanaHandler extends cdk.Construct {
 
     const pw = cdk.SecretValue.secretsManager(
       props.grafanaPwSecret.secretArn,
-      secretProps,
+      secretProps
     ).toString();
 
     // multiple CRs must be able to call the shared singleton lambda function, so use
     // the cr properties to pass in the imageUri via event['ResourceProperties']['grafana_pw']
     this.grafanaFunctionCRHandler = new cdk.CustomResource(
       this,
-      'grafanaHandlerCR',
+      "grafanaHandlerCR",
       {
         serviceToken: this.grafanaHandlerFunction.functionArn,
         properties: {
@@ -131,7 +137,7 @@ export class GrafanaHandler extends cdk.Construct {
           grafana_url: props.grafanaUrl,
           kms_key: props.kmsKey?.keyArn ? props.kmsKey.keyArn : null,
         },
-      },
+      }
     );
   }
 }
