@@ -104,4 +104,4 @@ export class TestStack extends cdk.Stack {
     holup.node.addDependency(depner);
   }
 }
-new TestStack(app, "teststack", { env });
+new TestStack(app, "testtddsstazckckk", { env });

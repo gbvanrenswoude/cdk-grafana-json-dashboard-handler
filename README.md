@@ -4,6 +4,16 @@ A handler Custom Construct for JSON Grafana Dashboards - Deploy to Grafana using
 
 The Construct contains a Lambda Singleton function, which gets wrapped by a CloudFormation Custom Resource.
 
+## Before using consider the following
+
+1. This construct is geared towards deploying json dashboards. This construct does not cater towards DSL for creating and developing Grafana Dashboards. The construct assumes you have placed this json dashboard somewhere in S3. If it is in your VCS, consider deploying it using `new s3assets.BucketDeployment` and then pass the object path & bucket name to the construct so it knows where to fetch it.
+
+2. This construct assumes Bearer authorization, in which the value of Bearer is stored in AWS Secretsmanager, either plain or in an object for which you can specify the key, e.g. `'password'` or `{'pass' : 'password'}`
+
+3. This construct assumes a reachable Grafana instance, either publicly or over an internal network.
+
+4. This construct currently does NOT support custom KMS encrypted files in s3 (see roadmap below)
+
 ## Grafana Handler
 
 Implement as following:
@@ -87,4 +97,4 @@ dbr.grafanaHandlerFunction.addToRolePolicy(
 ## TODO / Roadmap
 
 1. Add custom KMS key support for the dashboard files in s3.
-2. Add support for secretmanager and optional key
+2. Reduce SecretsManager permissions

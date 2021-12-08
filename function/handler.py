@@ -1,6 +1,7 @@
 import json
 import boto3
 import requests  # TODO use urllib3 in order to ditch the lambda layer providing requests
+from botocore.exceptions import ClientError
 
 
 # A valid dashboard JSON has an uid, id and title. We generate these based on input, so static JSON files are not a problem
@@ -19,9 +20,35 @@ def render_payload_object(event, dashboard_file, dashboard_app_name, dashboard_u
     }
 
 
-def render_headers(event):
+def get_grafana_bearer_token(event):
+    secret_name = event['ResourceProperties']['grafana_pw']
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name='eu-central-1'
+    )
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+
+    if "grafana_pw_key" in event['ResourceProperties']:
+        print('Returning grafana_pw_key from secret')
+        key = event['ResourceProperties']['grafana_pw_key']
+        return secret[key]
+    else:
+        print('Returning full secret')
+        return secret
+
+
+def render_headers(grafana_pw):
+    print('API KEY')
     return {"Accept": "application/json", "Content-Type": "application/json",
-            "Authorization": "Bearer " + event['ResourceProperties']['grafana_pw']}
+            "Authorization": "Bearer " + grafana_pw}
 
 
 def get_dashboard_file(event):
@@ -39,11 +66,12 @@ def main(event, context):
     Expected keys in the event Dict are:
 
     event['ResourceProperties']['grafana_pw']
+    event['ResourceProperties']['grafana_pw_key']
     event['ResourceProperties']['bucket_name']
     event['ResourceProperties']['object_key']
     event['ResourceProperties']['dashboard_app_name']
     event['ResourceProperties']['grafana_url']
-    event['ResourceProperties']['kms_key']
+    event['ResourceProperties']['kms_key'] (Not yet implemented)
 
     Args:
         event ([type]): [AWS Lambda Event Dict]
@@ -56,10 +84,12 @@ def main(event, context):
             grafana_url = event['ResourceProperties']['grafana_url']
             physical_id = event["PhysicalResourceId"]
             dashboard_app_name = event['ResourceProperties']['dashboard_app_name']
+            print('Getting authentication Bearer token value from Secretsmanager')
+            grafana_pw = get_grafana_bearer_token(event)
             print(
                 f'Deleting {dashboard_app_name} from {grafana_url}/api/dashboards/uid/{physical_id}')
             response = requests.delete(
-                f'{grafana_url}/api/dashboards/uid/{physical_id}', headers=render_headers(event))
+                f'{grafana_url}/api/dashboards/uid/{physical_id}', headers=render_headers(grafana_pw))
             print(response.text)
             sendResponse(event, context, 'SUCCESS', {}, physical_id)
         except Exception as e:
@@ -79,9 +109,11 @@ def main(event, context):
             payload = render_payload_object(
                 event, get_dashboard_file(event), dashboard_app_name, dashboard_uid)
 
+            print('Getting authentication Bearer token value from Secretsmanager')
+            grafana_pw = get_grafana_bearer_token(event)
             print(f'Posting {dashboard_app_name} to {grafana_url}')
             response = requests.post(
-                f'{grafana_url}/api/dashboards/db', headers=render_headers(event), json=payload)
+                f'{grafana_url}/api/dashboards/db', headers=render_headers(grafana_pw), json=payload)
             print(response.text)
             print(f'Posted {dashboard_app_name} to {grafana_url}')
             sendResponse(event, context, 'SUCCESS', {}, dashboard_app_name)

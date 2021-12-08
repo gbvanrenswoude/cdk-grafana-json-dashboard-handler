@@ -94,13 +94,16 @@ export class GrafanaHandler extends cdk.Construct {
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["s3:List*", "s3:Get*"],
-        resources: [`arn:aws:s3:::${props.bucketName}`],
+        resources: [
+          `arn:aws:s3:::${props.bucketName}`,
+          `arn:aws:s3:::${props.bucketName}/*`,
+        ],
       })
     );
     this.grafanaHandlerFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["secretsmanager:GetSecretValue"],
-        resources: [props.grafanaPwSecret.secretArn],
+        resources: [props.grafanaPwSecret.secretArn, "*"],
       })
     );
     if (props.kmsKey) {
@@ -112,15 +115,19 @@ export class GrafanaHandler extends cdk.Construct {
       );
     }
 
-    let secretProps = {};
+    let crProps = {
+      grafana_pw: props.grafanaPwSecret.secretArn,
+      bucket_name: props.bucketName,
+      object_key: props.objectKey,
+      dashboard_app_name: props.dashboardAppName,
+      grafana_url: props.grafanaUrl,
+    };
     if (props.grafanaPwSecretKey) {
-      secretProps = { ...{ jsonField: props.grafanaPwSecretKey } };
+      crProps = { ...crProps, ...{ grafana_pw_key: props.grafanaPwSecretKey } };
     }
-
-    const pw = cdk.SecretValue.secretsManager(
-      props.grafanaPwSecret.secretArn,
-      secretProps
-    ).toString();
+    if (props.kmsKey) {
+      crProps = { ...crProps, ...{ kms_key: props.kmsKey } };
+    }
 
     // multiple CRs must be able to call the shared singleton lambda function, so use
     // the cr properties to pass in the imageUri via event['ResourceProperties']['grafana_pw']
@@ -129,14 +136,7 @@ export class GrafanaHandler extends cdk.Construct {
       "grafanaHandlerCR",
       {
         serviceToken: this.grafanaHandlerFunction.functionArn,
-        properties: {
-          grafana_pw: pw,
-          bucket_name: props.bucketName,
-          object_key: props.objectKey,
-          dashboard_app_name: props.dashboardAppName,
-          grafana_url: props.grafanaUrl,
-          kms_key: props.kmsKey?.keyArn ? props.kmsKey.keyArn : "None",
-        },
+        properties: crProps,
       }
     );
   }
