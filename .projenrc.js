@@ -27,7 +27,8 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-kms',
   ],
   // cdkTestDependencies: undefined,  /* AWS CDK modules required for testing. */
-  // deps: [],                        /* Runtime dependencies of this module. */
+  // deps: ['md5-file'],                        /* Runtime dependencies of this module. */
+  bundledDeps: ['md5-file'],
   // description: undefined,          /* The description is just a string that helps people understand the purpose of the package. */
   devDeps: [
     '@aws-cdk/aws-secretsmanager',

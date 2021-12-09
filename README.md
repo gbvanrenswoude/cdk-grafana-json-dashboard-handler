@@ -2,17 +2,21 @@
 
 A handler Custom Construct for JSON Grafana Dashboards - Deploy to Grafana using AWSCDK.
 
+## How it works
+
+Declare the package as a dependency and import the Construct in your stack. Point it to your local Grafana dashboard file so the Construct can calculate an MD5 hash of it. This is needed as otherwise CloudFormation would not know when to redeploy your dashboard to Grafana when it changes. Upload your dashboard file in your CDK stack (s3assets, see example below), and pass the bucket and s3 file path to the Construct as well. Also, give the Construct a secret to resolve from SecretsManager in order to authenticate to your Grafana installation, in combination with the url where to find it. Finally give it a name so it can name your dashboard accordingly. Deploy!
+
+## Contents of the Custom Construct
+
 The Construct contains a Lambda Singleton function, which gets wrapped by a CloudFormation Custom Resource.
 
 ## Before using consider the following
 
-1. This construct is geared towards deploying json dashboards. This construct does not cater towards DSL for creating and developing Grafana Dashboards. The construct assumes you have placed this json dashboard somewhere in S3. If it is in your VCS, consider deploying it using `new s3assets.BucketDeployment` and then pass the object path & bucket name to the construct so it knows where to fetch it.
+1. This construct is geared towards deploying json dashboards. This construct does not cater towards DSL for creating and developing Grafana Dashboards. The construct assumes you will place this json dashboard somewhere in S3. Consider deploying it using `new s3assets.BucketDeployment` and then pass the object path & bucket name to the construct so it knows where to fetch it.
 
 2. This construct assumes Bearer authorization, in which the value of Bearer is stored in AWS Secretsmanager, either plain or in an object for which you can specify the key, e.g. `'password'` or `{'pass' : 'password'}`
 
-3. This construct assumes a reachable Grafana instance, either publicly or over an internal network.
-
-4. This construct currently does NOT support custom KMS encrypted files in s3 (see roadmap below)
+3. This construct currently does NOT support custom KMS encrypted files in s3 (see roadmap below)
 
 ## Grafana Handler
 
@@ -49,6 +53,7 @@ const dbr = new GrafanaHandler(this, "pog", {
   grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
   bucketName: bucket.bucketName,
   objectKey: "test/test/dashboard/test-dashboard.json",
+  localFilePath: "test/dashboard/test-dashboard.json",
 });
 dbr.node.addDependency(fdp);
 ```
@@ -62,6 +67,7 @@ const dbr = new GrafanaHandler(this, "pog", {
   grafanaUrl: getRequiredEnvVariable("GRAFANA_URL"),
   bucketName: bucket.bucketName,
   objectKey: "test/test/dashboard/test-dashboard.json",
+  localFilePath: "test/dashboard/test-dashboard.json",
   vpc: testingVpc,
   vpcSubnets: {
     subnets: [
@@ -84,6 +90,7 @@ const dbr = new GrafanaHandler(this, "pog", {
   grafanaPw: process.env.pw, // pass in a string value. CDK supports resolving to string values from SSM and SecretsManager
   grafanaUrl: process.env.url,
   pathToFile: "../src/test/test-dashboard.json",
+  localFilePath: "test/dashboard/test-dashboard.json",
 });
 
 dbr.grafanaHandlerFunction.addToRolePolicy(
@@ -93,6 +100,10 @@ dbr.grafanaHandlerFunction.addToRolePolicy(
   })
 );
 ```
+
+## Example deployment
+
+![Design](docs/example.jpeg)
 
 ## TODO / Roadmap
 

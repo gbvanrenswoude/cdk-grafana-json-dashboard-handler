@@ -4785,6 +4785,11 @@
   "resolved" "https://registry.npmjs.org/map-obj/-/map-obj-4.3.0.tgz"
   "version" "4.3.0"
 
+"md5-file@^5.0.0":
+  "integrity" "sha512-xbEFXCYVWrSx/gEKS1VPlg84h/4L20znVIulKw6kMfmBUAZNAnF00eczz9ICMl+/hjQGo5KSXRxbL/47X3rmMw=="
+  "resolved" "https://registry.npmjs.org/md5-file/-/md5-file-5.0.0.tgz"
+  "version" "5.0.0"
+
 "md5@^2.3.0":
   "integrity" "sha512-T1GITYmFaKuO91vxyoQMFETst+O71VUPEU3ze5GNzDm0OWdP8v1ziTaAEPUr/3kLsY3Sftgz242A1SetQiDL7g=="
   "resolved" "https://registry.npmjs.org/md5/-/md5-2.3.0.tgz"

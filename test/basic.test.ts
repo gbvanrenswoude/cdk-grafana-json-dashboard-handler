@@ -13,6 +13,7 @@ test('create app', () => {
     grafanaUrl: 'https://grafana-setup.domain.org',
     bucketName: new s3.Bucket(stack, 'ehhh').bucketName,
     objectKey: 'ehh/heh/test.json',
+    localFilePath: 'test/dashboard/test-dashboard.json',
   });
   expect(stack).toHaveResource('AWS::Lambda::Function');
   expect(stack).toHaveResource('AWS::CloudFormation::CustomResource');
