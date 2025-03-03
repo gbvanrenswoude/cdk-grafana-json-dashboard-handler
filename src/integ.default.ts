@@ -1,9 +1,11 @@
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as s3assets from '@aws-cdk/aws-s3-deployment';
-import * as sm from '@aws-cdk/aws-secretsmanager';
-import * as ssm from '@aws-cdk/aws-ssm';
-import * as cdk from '@aws-cdk/core';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3assets from 'aws-cdk-lib/aws-s3-deployment';
+import * as sm from 'aws-cdk-lib/aws-secretsmanager';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as cdk from 'aws-cdk-lib/core';
+import type { Construct } from 'constructs';
+
 import { GrafanaHandler } from './index';
 
 const env = {
@@ -16,16 +18,14 @@ const env = {
 function getRequiredEnvVariable(name: string) {
   const v = process.env[name];
   if (!v) {
-    throw new Error(
-      `Mising required environment variable needed for testing: "${name}"`,
-    );
+    throw new Error(`Missing required environment variable needed for testing: "${name}"`);
   }
   return v;
 }
 
 const app = new cdk.App();
 export class TestStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const testingVpc = ec2.Vpc.fromLookup(this, 'dataSourceTestingVpc', {
@@ -35,37 +35,25 @@ export class TestStack extends cdk.Stack {
     const testingPrivateSubnetID1 = ec2.Subnet.fromSubnetId(
       this,
       'dataSourceTestingPrivateSubnetID1',
-      ssm.StringParameter.fromStringParameterAttributes(
-        this,
-        'dataSourceSSMSubnet1',
-        {
-          parameterName: '/mn/landing-zone/vpc/subnets/private-1-id',
-        },
-      ).stringValue,
+      ssm.StringParameter.fromStringParameterAttributes(this, 'dataSourceSSMSubnet1', {
+        parameterName: '/mn/landing-zone/vpc/subnets/private-1-id',
+      }).stringValue,
     );
 
     const testingPrivateSubnetID2 = ec2.Subnet.fromSubnetId(
       this,
       'dataSourceTestingPrivateSubnetID2',
-      ssm.StringParameter.fromStringParameterAttributes(
-        this,
-        'DataSourceSSMSubnet2',
-        {
-          parameterName: '/mn/landing-zone/vpc/subnets/private-2-id',
-        },
-      ).stringValue,
+      ssm.StringParameter.fromStringParameterAttributes(this, 'DataSourceSSMSubnet2', {
+        parameterName: '/mn/landing-zone/vpc/subnets/private-2-id',
+      }).stringValue,
     );
 
     const testingPrivateSubnetID3 = ec2.Subnet.fromSubnetId(
       this,
       'dataSourceTestingPrivateSubnetID3',
-      ssm.StringParameter.fromStringParameterAttributes(
-        this,
-        'DataSourceSSMSubnet3',
-        {
-          parameterName: '/mn/landing-zone/vpc/subnets/private-3-id',
-        },
-      ).stringValue,
+      ssm.StringParameter.fromStringParameterAttributes(this, 'DataSourceSSMSubnet3', {
+        parameterName: '/mn/landing-zone/vpc/subnets/private-3-id',
+      }).stringValue,
     );
 
     const bucket = new s3.Bucket(this, 'pogg', {
@@ -95,11 +83,7 @@ export class TestStack extends cdk.Stack {
       localFilePath: 'test/dashboard/test-dashboard.json',
       vpc: testingVpc,
       vpcSubnets: {
-        subnets: [
-          testingPrivateSubnetID1,
-          testingPrivateSubnetID2,
-          testingPrivateSubnetID3,
-        ],
+        subnets: [testingPrivateSubnetID1, testingPrivateSubnetID2, testingPrivateSubnetID3],
       },
     });
     holup.node.addDependency(depner);

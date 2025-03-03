@@ -1,0 +1,213 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.6.1/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "origin/master"
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "overrides": [
+    {
+      "include": ["**/package.json"],
+      "formatter": {
+        "lineWidth": 1
+      }
+    }
+  ],
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noUselessFragments": {
+          "level": "warn"
+        },
+        "noStaticOnlyClass": {
+          "level": "warn"
+        },
+        "noUselessCatch": {
+          "level": "warn"
+        },
+        "noBannedTypes": {
+          "level": "warn"
+        },
+        "noForEach": {
+          "level": "off"
+        },
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn"
+        },
+        "useSimplifiedLogicExpression": {
+          "level": "off"
+        },
+        "noUselessTernary": {
+          "level": "error"
+        }
+      },
+      "performance": {
+        "noAccumulatingSpread": {
+          "level": "warn"
+        }
+      },
+      "correctness": {
+        "noSelfAssign": {
+          "level": "warn"
+        },
+        "noEmptyPattern": {
+          "level": "warn"
+        },
+        "noUnsafeOptionalChaining": {
+          "level": "warn"
+        },
+        "noInvalidUseBeforeDeclaration": {
+          "level": "warn"
+        },
+        "useExhaustiveDependencies": {
+          "level": "warn"
+        },
+        "noConstantCondition": {
+          "level": "warn"
+        },
+        "noUnusedImports": {
+          "level": "error"
+        },
+        "noUnusedVariables": {
+          "level": "warn"
+        },
+        "useHookAtTopLevel": {
+          "level": "error"
+        },
+        "useJsxKeyInIterable": {
+          "level": "off"
+        }
+      },
+      "style": {
+        "useDefaultParameterLast": {
+          "level": "off"
+        },
+        "noArguments": {
+          "level": "warn"
+        },
+        "useConst": {
+          "level": "warn"
+        },
+        "noCommaOperator": {
+          "level": "warn"
+        },
+        "noParameterAssign": {
+          "level": "warn"
+        },
+        "noNonNullAssertion": {
+          "level": "off"
+        },
+        "noImplicitBoolean": {
+          "level": "off"
+        },
+        "noNegationElse": {
+          "level": "error"
+        },
+        "useBlockStatements": {
+          "level": "error"
+        },
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"]
+          }
+        }
+      },
+      "suspicious": {
+        "noControlCharactersInRegex": {
+          "level": "warn"
+        },
+        "noConsoleLog": {
+          "level": "error"
+        },
+        "noDuplicateCase": {
+          "level": "warn"
+        },
+        "useDefaultSwitchClauseLast": {
+          "level": "warn"
+        },
+        "noPrototypeBuiltins": {
+          "level": "warn"
+        },
+        "noFallthroughSwitchClause": {
+          "level": "warn"
+        },
+        "noRedeclare": {
+          "level": "warn"
+        },
+        "noShadowRestrictedNames": {
+          "level": "warn"
+        },
+        "noImplicitAnyLet": {
+          "level": "warn"
+        },
+        "noAssignInExpressions": {
+          "level": "warn"
+        },
+        "noConfusingVoidType": {
+          "level": "off"
+        },
+        "noArrayIndexKey": {
+          "level": "warn"
+        },
+        "noExplicitAny": {
+          "level": "warn"
+        },
+        "noSkippedTests": {
+          "level": "off"
+        }
+      },
+      "nursery": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "node:assert": "Not permitted, see penalty at https://github.com/nodejs/node/issues/52677",
+              "assert": "Not permitted, see penalty at https://github.com/nodejs/node/issues/52677"
+            }
+          }
+        }
+      },
+      "a11y": {
+        "useIframeTitle": {
+          "level": "warn"
+        },
+        "useButtonType": {
+          "level": "warn"
+        },
+        "useHtmlLang": {
+          "level": "warn"
+        },
+        "useKeyWithClickEvents": {
+          "level": "warn"
+        },
+        "useAltText": {
+          "level": "warn"
+        },
+        "noSvgWithoutTitle": {
+          "level": "warn"
+        }
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": {
+          "level": "warn"
+        }
+      }
+    }
+  }
+}

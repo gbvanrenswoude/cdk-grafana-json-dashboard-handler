@@ -31,14 +31,16 @@
         "OUTFILE": "package.json",
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
-        "RELEASETAG": "dist/releasetag.txt"
+        "RELEASETAG": "dist/releasetag.txt",
+        "RELEASE_TAG_PREFIX": "",
+        "BUMP_PACKAGE": "commit-and-tag-version@^12"
       },
       "steps": [
         {
           "builtin": "release/bump-version"
         }
       ],
-      "condition": "! git log --oneline -1 | grep -q \"chore(release):\""
+      "condition": "git log --oneline -1 | grep -qv \"chore(release):\""
     },
     "clobber": {
       "name": "clobber",
@@ -86,7 +88,7 @@
       "description": "Only compile",
       "steps": [
         {
-          "exec": "jsii --silence-warnings=reserved-word --no-fix-peer-dependencies"
+          "exec": "jsii --silence-warnings=reserved-word"
         }
       ]
     },
@@ -104,16 +106,37 @@
       "description": "Generate API.md from .jsii manifest",
       "steps": [
         {
-          "exec": "jsii-docgen"
+          "exec": "jsii-docgen -o API.md"
         }
       ]
     },
-    "eslint": {
-      "name": "eslint",
-      "description": "Runs eslint against the codebase",
+    "eject": {
+      "name": "eject",
+      "description": "Remove projen from the project",
+      "env": {
+        "PROJEN_EJECTING": "true"
+      },
       "steps": [
         {
-          "exec": "eslint --ext .ts,.tsx --fix --no-error-on-unmatched-pattern src test build-tools .projenrc.js"
+          "spawn": "default"
+        }
+      ]
+    },
+    "install": {
+      "name": "install",
+      "description": "Install project dependencies and update lockfile (non-frozen)",
+      "steps": [
+        {
+          "exec": "yarn install --check-files"
+        }
+      ]
+    },
+    "install:ci": {
+      "name": "install:ci",
+      "description": "Install project dependencies using frozen lockfile",
+      "steps": [
+        {
+          "exec": "yarn install --check-files --frozen-lockfile"
         }
       ]
     },
@@ -122,7 +145,42 @@
       "description": "Creates the distribution package",
       "steps": [
         {
-          "exec": "jsii-pacmak"
+          "spawn": "package:js",
+          "condition": "node -e \"if (!process.env.CI) process.exit(1)\""
+        },
+        {
+          "spawn": "package-all",
+          "condition": "node -e \"if (process.env.CI) process.exit(1)\""
+        }
+      ]
+    },
+    "package-all": {
+      "name": "package-all",
+      "description": "Packages artifacts for all target languages",
+      "steps": [
+        {
+          "spawn": "package:js"
+        },
+        {
+          "spawn": "package:python"
+        }
+      ]
+    },
+    "package:js": {
+      "name": "package:js",
+      "description": "Create js language bindings",
+      "steps": [
+        {
+          "exec": "jsii-pacmak -v --target js"
+        }
+      ]
+    },
+    "package:python": {
+      "name": "package:python",
+      "description": "Create python language bindings",
+      "steps": [
+        {
+          "exec": "jsii-pacmak -v --target python"
         }
       ]
     },
@@ -135,52 +193,13 @@
         }
       ]
     },
+    "post-upgrade": {
+      "name": "post-upgrade",
+      "description": "Runs after upgrading dependencies"
+    },
     "pre-compile": {
       "name": "pre-compile",
       "description": "Prepare the project for compilation"
-    },
-    "publish:github": {
-      "name": "publish:github",
-      "description": "Publish this package to GitHub Releases",
-      "requiredEnv": [
-        "GITHUB_TOKEN",
-        "GITHUB_REPOSITORY",
-        "GITHUB_REF"
-      ],
-      "steps": [
-        {
-          "exec": "errout=$(mktemp); gh release create $(cat dist/releasetag.txt) -R $GITHUB_REPOSITORY -F dist/changelog.md -t $(cat dist/releasetag.txt) --target $GITHUB_REF 2> $errout && true; exitcode=$?; if [ $exitcode -ne 0 ] && ! grep -q \"Release.tag_name already exists\" $errout; then cat $errout; exit $exitcode; fi"
-        }
-      ]
-    },
-    "publish:npm": {
-      "name": "publish:npm",
-      "description": "Publish this package to npm",
-      "env": {
-        "NPM_DIST_TAG": "latest",
-        "NPM_REGISTRY": "registry.npmjs.org"
-      },
-      "requiredEnv": [
-        "NPM_TOKEN"
-      ],
-      "steps": [
-        {
-          "exec": "npx -p jsii-release@latest jsii-release-npm"
-        }
-      ]
-    },
-    "publish:pypi": {
-      "name": "publish:pypi",
-      "description": "Publish this package to PyPI",
-      "requiredEnv": [
-        "TWINE_USERNAME",
-        "TWINE_PASSWORD"
-      ],
-      "steps": [
-        {
-          "exec": "npx -p jsii-release@latest jsii-release-pypi"
-        }
-      ]
     },
     "release": {
       "name": "release",
@@ -211,19 +230,8 @@
       "description": "Run tests",
       "steps": [
         {
-          "exec": "jest --passWithNoTests --all --updateSnapshot"
-        },
-        {
-          "spawn": "eslint"
-        }
-      ]
-    },
-    "test:update": {
-      "name": "test:update",
-      "description": "Update jest snapshots",
-      "steps": [
-        {
-          "exec": "jest --updateSnapshot"
+          "exec": "jest --passWithNoTests --updateSnapshot",
+          "receiveArgs": true
         }
       ]
     },
@@ -243,7 +251,9 @@
         "OUTFILE": "package.json",
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
-        "RELEASETAG": "dist/releasetag.txt"
+        "RELEASETAG": "dist/releasetag.txt",
+        "RELEASE_TAG_PREFIX": "",
+        "BUMP_PACKAGE": "commit-and-tag-version@^12"
       },
       "steps": [
         {
@@ -259,61 +269,19 @@
       },
       "steps": [
         {
-          "exec": "npm-check-updates --dep dev --upgrade --target=minor --reject='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep optional --upgrade --target=minor --reject='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep peer --upgrade --target=minor --reject='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep prod --upgrade --target=minor --reject='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep bundle --upgrade --target=minor --reject='projen'"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/jest,@types/node,aws-cdk-lib,jest,jsii-diff,jsii-pacmak,projen,ts-jest,typescript,md5-file"
         },
         {
           "exec": "yarn install --check-files"
         },
         {
-          "exec": "yarn upgrade @aws-cdk/assert @aws-cdk/aws-secretsmanager @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-import-resolver-node eslint-import-resolver-typescript eslint-plugin-import jest jest-junit jsii jsii-diff jsii-docgen jsii-pacmak json-schema npm-check-updates standard-version ts-jest typescript md5-file @aws-cdk/aws-ec2 @aws-cdk/aws-iam @aws-cdk/aws-kms @aws-cdk/aws-lambda @aws-cdk/aws-logs @aws-cdk/aws-s3-deployment @aws-cdk/aws-s3 @aws-cdk/aws-secretsmanager @aws-cdk/aws-ssm @aws-cdk/core constructs @aws-cdk/aws-ec2 @aws-cdk/aws-iam @aws-cdk/aws-kms @aws-cdk/aws-lambda @aws-cdk/aws-logs @aws-cdk/aws-s3-deployment @aws-cdk/aws-s3 @aws-cdk/aws-secretsmanager @aws-cdk/aws-ssm @aws-cdk/core"
+          "exec": "yarn upgrade @types/jest @types/node aws-cdk-lib commit-and-tag-version jest jest-junit jsii-diff jsii-docgen jsii-pacmak jsii-rosetta jsii projen ts-jest typescript md5-file constructs"
         },
         {
           "exec": "npx projen"
-        }
-      ]
-    },
-    "upgrade-projen": {
-      "name": "upgrade-projen",
-      "description": "upgrade projen",
-      "env": {
-        "CI": "0"
-      },
-      "steps": [
-        {
-          "exec": "npm-check-updates --dep dev --upgrade --target=minor --filter='projen'"
         },
         {
-          "exec": "npm-check-updates --dep optional --upgrade --target=minor --filter='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep peer --upgrade --target=minor --filter='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep prod --upgrade --target=minor --filter='projen'"
-        },
-        {
-          "exec": "npm-check-updates --dep bundle --upgrade --target=minor --filter='projen'"
-        },
-        {
-          "exec": "yarn install --check-files"
-        },
-        {
-          "exec": "yarn upgrade projen"
-        },
-        {
-          "exec": "npx projen"
+          "spawn": "post-upgrade"
         }
       ]
     },
@@ -322,13 +290,13 @@
       "description": "Watch & compile in the background",
       "steps": [
         {
-          "exec": "jsii -w --silence-warnings=reserved-word --no-fix-peer-dependencies"
+          "exec": "jsii -w --silence-warnings=reserved-word"
         }
       ]
     }
   },
   "env": {
-    "PATH": "$(npx -c \"node -e \\\"console.log(process.env.PATH)\\\"\")"
+    "PATH": "$(npx -c \"node --print process.env.PATH\")"
   },
   "//": "~~ Generated by projen. To modify, edit .projenrc.js and run \"npx projen\"."
 }

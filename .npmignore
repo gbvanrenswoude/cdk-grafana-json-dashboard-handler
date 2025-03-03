@@ -3,6 +3,7 @@
 /test-reports/
 junit.xml
 /coverage/
+permissions-backup.acl
 /dist/changelog.md
 /dist/version.txt
 /.mergify.yml
@@ -19,5 +20,5 @@ dist
 /.idea/
 /.projenrc.js
 tsconfig.tsbuildinfo
-/.eslintrc.json
 !.jsii
+/.gitattributes

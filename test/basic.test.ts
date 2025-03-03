@@ -1,8 +1,8 @@
-import * as s3 from '@aws-cdk/aws-s3';
-import * as sm from '@aws-cdk/aws-secretsmanager';
-import * as cdk from '@aws-cdk/core';
+import { Template } from 'aws-cdk-lib/assertions';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as sm from 'aws-cdk-lib/aws-secretsmanager';
+import * as cdk from 'aws-cdk-lib/core';
 import { GrafanaHandler } from '../src/index';
-import '@aws-cdk/assert/jest';
 
 test('create app', () => {
   const app = new cdk.App();
@@ -15,8 +15,9 @@ test('create app', () => {
     objectKey: 'ehh/heh/test.json',
     localFilePath: 'test/dashboard/test-dashboard.json',
   });
-  expect(stack).toHaveResource('AWS::Lambda::Function');
-  expect(stack).toHaveResource('AWS::CloudFormation::CustomResource');
+
+  Template.fromStack(stack).hasResource('AWS::Lambda::Function', {});
+  Template.fromStack(stack).hasResource('AWS::CloudFormation::CustomResource', {});
   // TODO implement check for no subnetting
 });
 
